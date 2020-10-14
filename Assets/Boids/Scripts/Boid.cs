@@ -13,7 +13,12 @@ namespace Samples.Boids
         public float SeparationWeight;
         public float AlignmentWeight;
         public float TargetWeight;
-        public float ObstacleAversionDistance;
+        public float OuterDetectionRadius;
+        public float InnerDetectionRadius;
         public float MoveSpeed;
+
+        // New Settings
+        public float WanderRadius;
+        public float WanderWeight;
     }
 }

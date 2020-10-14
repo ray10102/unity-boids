@@ -22,9 +22,12 @@ namespace Samples.Boids
                     SeparationWeight = boidAuthoring.SeparationWeight,
                     AlignmentWeight = boidAuthoring.AlignmentWeight,
                     TargetWeight = boidAuthoring.TargetWeight,
-                    ObstacleAversionDistance = boidAuthoring.ObstacleAversionDistance,
-                    MoveSpeed = boidAuthoring.MoveSpeed
-                });
+                    OuterDetectionRadius = boidAuthoring.OuterDetectionRadius,
+                    InnerDetectionRadius = boidAuthoring.InnerDetectionRadius,
+                    MoveSpeed = boidAuthoring.MoveSpeed,
+                    WanderRadius = boidAuthoring.WanderRadius,
+                    WanderWeight = boidAuthoring.WanderWeight
+    });
 
                 // Remove default transform system components
                 DstEntityManager.RemoveComponent<Translation>(entity);

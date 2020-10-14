@@ -5,6 +5,9 @@ using Unity.Jobs;
 using Unity.Burst;
 using Unity.Mathematics;
 using Unity.Transforms;
+using System.Diagnostics;
+using System;
+using UnityEngine;
 
 // Mike's GDC Talk on 'A Data Oriented Approach to Using Component Systems'
 // is a great reference for dissecting the Boids sample code:
@@ -234,6 +237,7 @@ namespace Samples.Boids
                 // the `localToWorld` of each of the boids based on their newly calculated headings using
                 // the standard boid flocking algorithm.
                 float deltaTime = math.min(0.05f, Time.DeltaTime);
+                Unity.Mathematics.Random random = new Unity.Mathematics.Random((uint)UnityEngine.Random.Range(1, 100000));
                 var steerJobHandle = Entities
                     .WithName("Steer")
                     .WithSharedComponentFilter(settings) // implies .WithAll<Boid>()
@@ -260,7 +264,7 @@ namespace Samples.Boids
                         var nearestTargetPositionIndex        = cellTargetPositionIndex[cellIndex];
                         var nearestObstaclePosition           = copyObstaclePositions[nearestObstaclePositionIndex];
                         var nearestTargetPosition             = copyTargetPositions[nearestTargetPositionIndex];
-
+                        var nearestTargetDiff                 = nearestTargetPosition - currentPosition;
                         // Setting up the directions for the three main biocrowds influencing directions adjusted based
                         // on the predefined weights:
                         // 1) alignment - how much should it move in a direction similar to those around it?
@@ -276,7 +280,11 @@ namespace Samples.Boids
                             * math.normalizesafe((currentPosition * neighborCount) - separation);
                         // 3) target - is it still towards its destination?
                         var targetHeading       = settings.TargetWeight
-                            * math.normalizesafe(nearestTargetPosition - currentPosition);
+                            * math.normalizesafe(nearestTargetDiff);
+
+                        // wander -  apply a random displacement to the target heading depending on distance to target.
+                        float3 disp = settings.WanderWeight * settings.WanderRadius * random.NextFloat3Direction();
+                        targetHeading += math.lerp(float3.zero, disp, math.clamp((math.length(nearestTargetDiff) - settings.InnerDetectionRadius) / (settings.OuterDetectionRadius - settings.InnerDetectionRadius), 0f, 1f));
 
                         // creating the obstacle avoidant vector s.t. it's pointing towards the nearest obstacle
                         // but at the specified 'ObstacleAversionDistance'. If this distance is greater than the
@@ -289,16 +297,14 @@ namespace Samples.Boids
                         // isn't close enough).
                         var obstacleSteering                  = currentPosition - nearestObstaclePosition;
                         var avoidObstacleHeading              = (nearestObstaclePosition + math.normalizesafe(obstacleSteering)
-                            * settings.ObstacleAversionDistance) - currentPosition;
+                            * settings.OuterDetectionRadius) - currentPosition;
 
-                        // the updated heading direction. If not needing to be avoidant (ie obstacle is not within
-                        // predefined radius) then go with the usual defined heading that uses the amalgamation of
-                        // the weighted alignment, separation, and target direction vectors.
-                        var nearestObstacleDistanceFromRadius = nearestObstacleDistance - settings.ObstacleAversionDistance;
+                        // Interpolate between obstacle avoidance and normal heading
+                        var nearestObstacleDistanceFromRadius = nearestObstacleDistance - settings.OuterDetectionRadius;
                         var normalHeading                     = math.normalizesafe(alignmentResult + separationResult + targetHeading);
-                        var targetForward                     = math.select(normalHeading, avoidObstacleHeading, nearestObstacleDistanceFromRadius < 0);
-
-                        // updates using the newly calculated heading direction
+                        var targetForward = math.lerp(avoidObstacleHeading, normalHeading, math.clamp((nearestObstacleDistance - settings.InnerDetectionRadius) / (settings.OuterDetectionRadius - settings.InnerDetectionRadius), 0f, 1f));
+                        
+                        // updates using the newly calculated heading direction1
                         var nextHeading                       = math.normalizesafe(forward + deltaTime * (targetForward - forward));
                         localToWorld = new LocalToWorld
                         {

@@ -26,8 +26,11 @@ namespace Samples.Boids
                     InnerDetectionRadius = boidAuthoring.InnerDetectionRadius,
                     MoveSpeed = boidAuthoring.MoveSpeed,
                     WanderRadius = boidAuthoring.WanderRadius,
-                    WanderWeight = boidAuthoring.WanderWeight
-    });
+                    WanderWeight = boidAuthoring.WanderWeight,
+                    VisionAngle = boidAuthoring.VisionAngle,
+                    NavigationRayCount = boidAuthoring.NavigationRayCount,
+                    SearchPoints = DotGenerator.GetPoints(boidAuthoring.NavigationRayCount, boidAuthoring.VisionAngle)
+                });
 
                 // Remove default transform system components
                 DstEntityManager.RemoveComponent<Translation>(entity);

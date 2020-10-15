@@ -1,7 +1,8 @@
 using System;
 using Unity.Entities;
-using UnityEngine;
 using Unity.Transforms;
+using Unity.Mathematics;
+using Unity.Collections;
 
 namespace Samples.Boids
 {
@@ -16,9 +17,10 @@ namespace Samples.Boids
         public float OuterDetectionRadius;
         public float InnerDetectionRadius;
         public float MoveSpeed;
-
-        // New Settings
         public float WanderRadius;
         public float WanderWeight;
+        public float VisionAngle;
+        public int NavigationRayCount;
+        public NativeArray<float3> SearchPoints;
     }
 }

@@ -21,6 +21,25 @@ namespace Samples.Boids
         public float WanderWeight;
         public float VisionAngle;
         public int NavigationRayCount;
-        public NativeArray<float3> SearchPoints;
+
+        //public bool Equals(Boid other)
+        //{
+        //    return CellRadius == other.CellRadius
+        //        && AlignmentWeight == other.AlignmentWeight
+        //        && SeparationWeight == other.SeparationWeight
+        //        && TargetWeight == other.TargetWeight
+        //        && OuterDetectionRadius == other.OuterDetectionRadius
+        //        && InnerDetectionRadius == other.InnerDetectionRadius
+        //        && MoveSpeed == other.MoveSpeed
+        //        && WanderRadius == other.WanderRadius
+        //        && WanderWeight == other.WanderWeight
+        //        && VisionAngle == other.VisionAngle
+        //        && NavigationRayCount == other.NavigationRayCount;
+        //}
+
+        //public override int GetHashCode()
+        //{
+        //    return base.GetHashCode();
+        //}
     }
 }

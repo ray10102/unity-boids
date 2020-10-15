@@ -6,6 +6,7 @@ using Unity.Burst;
 using Unity.Mathematics;
 using Unity.Transforms;
 using Unity.Physics;
+using System.Diagnostics;
 
 // Mike's GDC Talk on 'A Data Oriented Approach to Using Component Systems'
 // is a great reference for dissecting the Boids sample code:
@@ -173,8 +174,6 @@ namespace Samples.Boids
                 var unobstructedDirections = new NativeArray<float3>(boidCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 var copyTargetPositions = new NativeArray<float3>(targetCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 var copyEnemyPositions = new NativeArray<float3>(enemyCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                var searchPoints = settings.SearchPoints;
-
                 // The following jobs all run in parallel because the same JobHandle is passed for their
                 // input dependencies when the jobs are scheduled; thus, they can run in any order (or concurrently).
                 // The concurrency is property of how they're scheduled, not of the job structs themselves.
@@ -225,14 +224,16 @@ namespace Samples.Boids
                 var findUnobstructedDirectionsJobHandle = Entities
                     .WithName("FindUnobstructedDirectionsJob")
                     .WithSharedComponentFilter(settings)
-                    .ForEach((int entityInQueryIndex, in LocalToWorld localToWorld) =>
+                    .ForEach((int entityInQueryIndex, in LocalToWorld localToWorld, in DynamicBuffer<Float3BufferElement> buffer) =>
                     {
+                        JobLogger.Log("In find unobstructed job");
                         float3 bestDir = float3.zero;
                         float furthestHit = 0f;
                         RaycastHit hit;
-                        for (int i = 0; i < searchPoints.Length; i++)
+                        DynamicBuffer<float3> float3buffer = buffer.Reinterpret<float3>();
+                        for (int i = 0; i < float3buffer.Length; i++)
                         {
-                            float3 end = localToWorld.Position + ((math.mul(localToWorld.Value, new float4(searchPoints[0], 1)) * settings.OuterDetectionRadius)).xyz;
+                            float3 end = localToWorld.Position + ((math.mul(localToWorld.Value, new float4(float3buffer[i], 1)) * settings.OuterDetectionRadius)).xyz;
                             RaycastInput input = new RaycastInput()
                             {
                                 Start = localToWorld.Position,
@@ -251,11 +252,13 @@ namespace Samples.Boids
                                 {
                                     bestDir = hit.Position - localToWorld.Position;
                                     furthestHit = dist;
+                                    JobLogger.Log("Found a better way");
                                 }
                             }
                             else // this direction is unobstructed, return
                             {
                                 unobstructedDirections[entityInQueryIndex] = hit.Position - localToWorld.Position;
+                                JobLogger.Log("Found a way");
                                 return;
                             }
                         }
@@ -443,6 +446,7 @@ namespace Samples.Boids
                 disposeJobHandle = JobHandle.CombineDependencies(disposeJobHandle, copyTargetPositions.Dispose(Dependency));
                 disposeJobHandle = JobHandle.CombineDependencies(disposeJobHandle, raycastInputs.Dispose(Dependency));
                 disposeJobHandle = JobHandle.CombineDependencies(disposeJobHandle, initialRaycastResults.Dispose(Dependency));
+                disposeJobHandle = JobHandle.CombineDependencies(disposeJobHandle, unobstructedDirections.Dispose(Dependency));
                 Dependency = disposeJobHandle;
 
                 // We pass the job handle and add the dependency so that we keep the proper ordering between the jobs

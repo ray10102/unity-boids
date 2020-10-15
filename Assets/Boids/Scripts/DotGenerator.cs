@@ -46,6 +46,7 @@ public class DotGenerator : MonoBehaviour
 
     public static NativeArray<float3> GetPoints(int count, float rad, float turnFraction = 0.6180f)
     {
+        Debug.Log("in");
         List<float3> points = new List<float3>();
         for (int i = 0; i < count; i++)
         {
@@ -67,7 +68,8 @@ public class DotGenerator : MonoBehaviour
         {
             result[i] = points[i];
         }
-
+        Debug.Log("points" + points.Count);
+        Debug.Log("result" + result.Length);
         return result;
     }
 }
